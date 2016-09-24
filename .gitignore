@@ -1,0 +1,10 @@
+obj/
+x64/
+x86/
+.vs/
+*.sln
+*.vcxproj
+*.db
+*.sdf
+*.filters
+smarthome
