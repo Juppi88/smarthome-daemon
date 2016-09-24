@@ -7,4 +7,5 @@ x86/
 *.db
 *.sdf
 *.filters
+*.sublime-workspace
 smarthome
