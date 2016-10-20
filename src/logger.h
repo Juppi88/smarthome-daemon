@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __SMARTHOME_LOG_H
-#define __SMARTHOME_LOG_H
+#ifndef __SMARTHOME_LOGGER_H
+#define __SMARTHOME_LOGGER_H
 
 #include "defines.h"
 

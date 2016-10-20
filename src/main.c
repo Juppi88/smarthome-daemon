@@ -1,5 +1,6 @@
 #include "config.h"
 #include "modules.h"
+#include "messaging.h"
 #include "utils.h"
 #include <stdio.h>
 
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
 {
 	// Initialize subsystems.
 	config_initialize();
+	messaging_initialize();
 	modules_initialize();
 
 	// Load the config file. The main config file will contain the modules to be loaded.
@@ -61,6 +63,7 @@ int main(int argc, char **argv)
 
 	// Unload modules and shutdown subsystems.
 	modules_shutdown();
+	messaging_shutdown();
 	config_shutdown();
 
 	return 0;

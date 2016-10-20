@@ -1,8 +1,9 @@
 #include "modules.h"
 #include "module.h"
 #include "utils.h"
-#include "log.h"
+#include "logger.h"
 #include "config.h"
+#include "messaging.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -34,8 +35,12 @@ CONFIG_HANDLER(unload_module);
 
 void modules_initialize(void)
 {
+	// Initialize the module API.
 	api.log_write = output_log;
 	api.log_write_error = output_error;
+	api.message_publish = messaging_publish;
+	api.message_subscribe = messaging_subscribe;
+	api.message_unsubscribe = messaging_unsubscribe;
 
 	// Register config handlers for module loading and unloading.
 	config_add_command_handler("load_module", load_module);
@@ -70,7 +75,7 @@ static void modules_load(const char *name)
 	}
 
 	char path[256];
-	sprintf(path, "./modules/%s" MODULE_EXTENSION, name);
+	snprintf(path, sizeof(path), "./modules/%s" MODULE_EXTENSION, name);
 
 	// Try to open the library.
 	void *handle = utils_load_library(path);
