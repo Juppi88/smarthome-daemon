@@ -7,8 +7,8 @@
 
 void messaging_initialize(void);
 void messaging_shutdown(void);
-void messaging_publish(const char *topic, const char *message);
-void messaging_subscribe(const char *topic, void *context, message_update_t callback);
-void messaging_unsubscribe(const char *topic, void *context, message_update_t callback);
+void messaging_publish(const char *message, const char *topic_fmt, ...);
+void messaging_subscribe(void *context, message_update_t callback, const char *topic_fmt, ...);
+void messaging_unsubscribe(void *context, message_update_t callback, const char *topic_fmt, ...);
 
 #endif

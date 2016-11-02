@@ -1,3 +1,4 @@
+#include "main.h"
 #include "config.h"
 #include "modules.h"
 #include "messaging.h"
@@ -5,6 +6,7 @@
 #include <stdio.h>
 
 static bool running = true;
+static char config_directory[260] = { "./config" };
 
 #ifndef DAEMON
 
@@ -36,7 +38,10 @@ int main(int argc, char **argv)
 	modules_initialize();
 
 	// Load the config file. The main config file will contain the modules to be loaded.
-	config_parse_file("./config/smarthome.conf");
+	char config_file[260];
+	snprintf(config_file, sizeof(config_file), "%s/smarthome.conf", config_directory);
+
+	config_parse_file(config_file);
 
 #ifndef DAEMON
 	// Register a command for shutting down the process.
@@ -67,4 +72,9 @@ int main(int argc, char **argv)
 	config_shutdown();
 
 	return 0;
+}
+
+const char *get_config_directory(void)
+{
+	return config_directory;
 }

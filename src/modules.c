@@ -1,3 +1,4 @@
+#include "main.h"
 #include "modules.h"
 #include "module.h"
 #include "utils.h"
@@ -36,11 +37,17 @@ CONFIG_HANDLER(unload_module);
 void modules_initialize(void)
 {
 	// Initialize the module API.
+	api.get_config_directory = get_config_directory;
+	api.config_add_command_handler = config_add_command_handler;
+	api.config_parse_file = config_parse_file;
 	api.log_write = output_log;
 	api.log_write_error = output_error;
 	api.message_publish = messaging_publish;
 	api.message_subscribe = messaging_subscribe;
 	api.message_unsubscribe = messaging_unsubscribe;
+	api.alloc = utils_alloc;
+	api.free = utils_free;
+	api.duplicate_string = utils_duplicate_string;
 
 	// Register config handlers for module loading and unloading.
 	config_add_command_handler("load_module", load_module);

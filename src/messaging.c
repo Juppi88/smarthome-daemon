@@ -2,13 +2,16 @@
 #include "config.h"
 #include "logger.h"
 #include "MQTTAsync.h"
+#include "main.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #define CLIENTID "smarthome_daemon"
 #define QOS 1
 
-static char mqtt_server[128] = "localhost";
+static char mqtt_server[128];
 static uint16_t mqtt_port = 1883;
 
 static MQTTAsync client;
@@ -47,10 +50,14 @@ void messaging_initialize(void)
 	config_add_command_handler("mqtt_port", set_mqtt_port);
 
 	// Load the MQTT client config file.
+	char mqtt_config[260];
+	snprintf(mqtt_config, sizeof(mqtt_config), "%s/mqtt.conf", get_config_directory());
 	config_parse_file("./config/mqtt.conf");
 
 	// If all the necessary settings are available, create an MQTT client and connect to the server.
-	messaging_connect();
+	if (*mqtt_server != 0) {
+		messaging_connect();
+	}
 }
 
 void messaging_shutdown(void)
@@ -62,11 +69,18 @@ void messaging_shutdown(void)
 	// TODO: Destroy all subscriptions.
 }
 
-void messaging_publish(const char *topic, const char *message)
+void messaging_publish(const char *message, const char *topic_fmt, ...)
 {
 	if (!is_connected) {
 		return;
 	}
+
+	char topic[256];
+	va_list args;
+
+	va_start(args, topic_fmt);
+	vsnprintf(topic, sizeof(topic), topic_fmt, args);
+	va_end(args);
 
 	MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
 	opts.context = client;
@@ -80,8 +94,15 @@ void messaging_publish(const char *topic, const char *message)
 	MQTTAsync_sendMessage(client, topic, &msg, &opts);
 }
 
-void messaging_subscribe(const char *topic, void *context, message_update_t callback)
+void messaging_subscribe(void *context, message_update_t callback, const char *topic_fmt, ...)
 {
+	char topic[256];
+	va_list args;
+
+	va_start(args, topic_fmt);
+	vsnprintf(topic, sizeof(topic), topic_fmt, args);
+	va_end(args);
+
 	struct mqtt_subscription_t *sub = NULL;
 	// TODO: Add to the list of subscriptions and then actually subscribe if connected.
 
@@ -90,8 +111,15 @@ void messaging_subscribe(const char *topic, void *context, message_update_t call
 	}
 }
 
-void messaging_unsubscribe(const char *topic, void *context, message_update_t callback)
+void messaging_unsubscribe(void *context, message_update_t callback, const char *topic_fmt, ...)
 {
+	char topic[256];
+	va_list args;
+
+	va_start(args, topic_fmt);
+	vsnprintf(topic, sizeof(topic), topic_fmt, args);
+	va_end(args);
+
 	struct mqtt_subscription_t *sub = NULL;
 	// TODO: Actually unsubscribe if connected then remove from the list.
 

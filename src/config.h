@@ -3,9 +3,7 @@
 #define __SMARTHOME_CONFIG_H
 
 #include "defines.h"
-
-typedef void (*config_handler_t)(char *args);
-#define CONFIG_HANDLER(x) static void x(char *args)
+#include "module.h"
 
 // --------------------------------------------------------------------------------
 

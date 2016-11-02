@@ -13,16 +13,30 @@
 #define MODULE_API_VERSION 1
 
 typedef void (*message_update_t)(const char *topic, const char *message, void *context);
+#define MESSAGE_HANDLER(x) static void x(const char *topic, const char *message, void *context)
+
+typedef void (*config_handler_t)(char *args);
+#define CONFIG_HANDLER(x) static void x(char *args)
 
 struct module_import_t {
+	// Config files
+	const char *(*get_config_directory)(void);
+	void (*config_add_command_handler)(const char *command, config_handler_t method);
+	void (*config_parse_file)(const char *path);
+
 	// Logging
 	void (*log_write)(const char *format, ...);
 	void (*log_write_error)(const char *format, ...);
 
 	// Messaging
-	void (*message_publish)(const char *topic, const char *message);
-	void (*message_subscribe)(const char *topic, void *context, message_update_t callback);
-	void (*message_unsubscribe)(const char *topic, void *context, message_update_t callback);
+	void (*message_publish)(const char *message, const char *topic_fmt, ...);
+	void (*message_subscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
+	void (*message_unsubscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
+
+	// Utilities
+	void *(*alloc)(size_t size);
+	void (*free)(void *ptr);
+	char *(*duplicate_string)(const char *text);
 };
 
 struct module_export_t {
