@@ -19,7 +19,20 @@
 		if (list != NULL) {\
 			entry->next = list;\
 		}\
-		entry = light;\
+		list = entry;\
+	}
+
+#define LIST_REMOVE_ENTRY(type, entry, list)\
+	if (entry != list) {\
+		for (type *tmp = list, *prev_tmp = NULL; tmp != NULL; prev_tmp = tmp, tmp = tmp->next) {\
+			if (tmp == entry) {\
+				prev_tmp->next = tmp->next;\
+				break;\
+			}\
+		}\
+	}\
+	else {\
+		list = entry->next;\
 	}
 
 #define LIST_FOREACH(type, var, list)\

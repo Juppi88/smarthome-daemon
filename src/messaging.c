@@ -1,8 +1,9 @@
 #include "messaging.h"
 #include "config.h"
 #include "logger.h"
-#include "MQTTAsync.h"
 #include "main.h"
+#include "utils.h"
+#include "MQTTAsync.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,12 +25,13 @@ struct mqtt_subscription_t {
 	struct mqtt_subscription_t *next;
 };
 
-struct mqtt_subscription_t *first = NULL;
+struct mqtt_subscription_t *subscriptions = NULL;
 
 // --------------------------------------------------------------------------------
 
 static void messaging_connect(void);
 static void messaging_disconnect(void);
+static struct mqtt_subscription_t *messaging_get_subscription(const char *topic, void *context, message_update_t callback);
 static void messaging_register_subscription(struct mqtt_subscription_t *sub);
 static void messaging_unregister_subscription(struct mqtt_subscription_t *sub);
 static void messaging_on_connect_success(void *context, MQTTAsync_successData *response);
@@ -66,7 +68,13 @@ void messaging_shutdown(void)
 		messaging_disconnect();
 	}
 
-	// TODO: Destroy all subscriptions.
+	// Destroy all subscriptions.
+	LIST_FOREACH_SAFE(struct mqtt_subscription_t, sub, tmp, subscriptions) {
+		utils_free(sub->topic);
+		utils_free(sub);
+	}
+
+	subscriptions = NULL;
 }
 
 void messaging_publish(const char *message, const char *topic_fmt, ...)
@@ -103,9 +111,21 @@ void messaging_subscribe(void *context, message_update_t callback, const char *t
 	vsnprintf(topic, sizeof(topic), topic_fmt, args);
 	va_end(args);
 
-	struct mqtt_subscription_t *sub = NULL;
-	// TODO: Add to the list of subscriptions and then actually subscribe if connected.
+	// Add to the list of subscriptions and then actually subscribe if connected.
+	// If the subscription has been added already, don't do anything.
+	struct mqtt_subscription_t *sub = messaging_get_subscription(topic, context, callback);
 
+	if (sub != NULL) {
+		return;
+	}
+
+	sub = utils_alloc(sizeof(*sub));
+	sub->topic = utils_duplicate_string(topic);
+	sub->context = context;
+	sub->callback = callback;
+
+	LIST_ADD_ENTRY(subscriptions, sub);
+	
 	if (is_connected) {
 		messaging_register_subscription(sub);
 	}
@@ -120,12 +140,21 @@ void messaging_unsubscribe(void *context, message_update_t callback, const char 
 	vsnprintf(topic, sizeof(topic), topic_fmt, args);
 	va_end(args);
 
-	struct mqtt_subscription_t *sub = NULL;
-	// TODO: Actually unsubscribe if connected then remove from the list.
+	struct mqtt_subscription_t *sub = messaging_get_subscription(topic, context, callback);
 
+	if (sub == NULL) {
+		return;
+	}
+
+	// Actually unsubscribe if connected, then remove from the list and destroy.
 	if (is_connected) {
 		messaging_unregister_subscription(sub);
 	}
+
+	LIST_REMOVE_ENTRY(struct mqtt_subscription_t, sub, subscriptions);
+
+	utils_free(sub->topic);
+	utils_free(sub);
 }
 
 static void messaging_connect(void)
@@ -169,6 +198,19 @@ static void messaging_disconnect(void)
 	is_connected = false;
 }
 
+static struct mqtt_subscription_t *messaging_get_subscription(const char *topic, void *context, message_update_t callback)
+{
+	LIST_FOREACH(struct mqtt_subscription_t, sub, subscriptions) {
+		if (strcmp(topic, sub->topic) == 0 &&
+			sub->context == context &&
+			sub->callback == callback) {
+			return sub;
+		}
+	}
+
+	return NULL;
+}
+
 static void messaging_register_subscription(struct mqtt_subscription_t *sub)
 {
 	if (!is_connected || sub == NULL) {
@@ -204,7 +246,7 @@ static void messaging_on_connect_success(void *context, MQTTAsync_successData *r
 	output_log("Connected to MQTT server.");
 
 	// Register all existing subscriptions on connect.
-	for (struct mqtt_subscription_t *sub = first; sub != NULL; sub = sub->next) {
+	LIST_FOREACH(struct mqtt_subscription_t, sub, subscriptions) {
 		messaging_register_subscription(sub);
 	}
 }
@@ -230,8 +272,7 @@ static void messaging_on_connection_lost(void *context, char *cause)
 static int messaging_on_message_arrived(void *context, char *topic, int topic_len, MQTTAsync_message *message)
 {
 	// Notify all listeners about the updated topic.
-	for (struct mqtt_subscription_t *sub = first; sub != NULL; sub = sub->next) {
-
+	LIST_FOREACH(struct mqtt_subscription_t, sub, subscriptions) {
 		if (strcmp(sub->topic, topic) == 0 && sub->callback != NULL) {
 			sub->callback(topic, (const char *)message->payload, sub->context);
 		}
