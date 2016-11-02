@@ -8,5 +8,6 @@ x86/
 *.sdf
 *.filters
 *.opendb
+*.user
 *.sublime-workspace
 smarthome
