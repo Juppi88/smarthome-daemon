@@ -1,19 +1,47 @@
+.DEFAULT_GOAL := all
 TARGET = smarthome
-CFLAGS = -std=c99 -O2 -Wall -I./inc
+CFLAGS = -O2 -Wall -I./inc -I./vendor/paho.mqtt.c/src
+CFLAGS2 = -std=c99 $(CFLAGS)
 
-compile:
-	mkdir -p obj
+OBJS = obj/main.o obj/config.o obj/logger.o obj/messaging.o obj/modules.o obj/utils.o\
+       obj/MQTTAsync.o obj/MQTTPersistence.o obj/MQTTPersistenceDefault.o obj/MQTTPacket.o obj/MQTTPacketOut.o obj/MQTTProtocolClient.o obj/MQTTProtocolOut.o
 
-	gcc $(CFLAGS) -c src/main.c -o obj/main.o
-	gcc $(CFLAGS) -c src/config.c -o obj/config.o
-	gcc $(CFLAGS) -c src/log.c -o obj/log.o
-	gcc $(CFLAGS) -c src/modules.c -o obj/modules.o
-	gcc $(CFLAGS) -c src/utils.c -o obj/utils.o
+compile_core:
+	gcc $(CFLAGS2) -c src/main.c -o obj/main.o
+	gcc $(CFLAGS2) -c src/config.c -o obj/config.o
+	gcc $(CFLAGS2) -c src/logger.c -o obj/logger.o
+	gcc $(CFLAGS2) -c src/messaging.c -o obj/messaging.o
+	gcc $(CFLAGS2) -c src/modules.c -o obj/modules.o
+	gcc $(CFLAGS2) -c src/utils.c -o obj/utils.o
 
-	gcc -o $(TARGET) obj/main.o obj/config.o obj/log.o obj/modules.o obj/utils.o -ldl -lpthread
+compile_mqtt:
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTAsync.c -o obj/MQTTAsync.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPersistence.c -o obj/MQTTPersistence.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPersistenceDefault.c -o obj/MQTTPersistenceDefault.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPacket.c -o obj/MQTTPacket.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPacketOut.c -o obj/MQTTPacketOut.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTProtocolClient.c -o obj/MQTTProtocolClient.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTProtocolOut.c -o obj/MQTTProtocolOut.o	
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Clients.c -o obj/Clients.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Heap.c -o obj/Heap.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/LinkedList.c -o obj/LinkedList.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Log.c -o obj/Log.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Messages.c -o obj/Messages.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/SocketBuffer.c -o obj/SocketBuffer.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Socket.c -o obj/Socket.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/StackTrace.c -o obj/StackTrace.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Thread.c -o obj/Thread.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Tree.c -o obj/Tree.o
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/utf-8.c -o obj/utf-8.o
+
+link:
+	gcc -o $(TARGET) $(OBJS) obj/Clients.o obj/Heap.o obj/LinkedList.o obj/Log.o obj/Messages.o obj/SocketBuffer.o obj/Socket.o obj/StackTrace.o obj/Thread.o obj/Tree.o obj/utf-8.o -ldl -lpthread
 
 clean:
 	rm -f obj/*.o
 
 all:
-	compile
+	mkdir -p obj
+	make compile_core
+	make compile_mqtt
+	make link
