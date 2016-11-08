@@ -1,0 +1,3 @@
+[submodule "lib/httpserver"]
+	path = lib/httpserver
+	url = ssh://git@project-apollo.co.uk:32713/Juppi/httpserver.git
