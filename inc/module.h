@@ -18,7 +18,11 @@ typedef void (*message_update_t)(const char *topic, const char *message, void *c
 typedef void (*config_handler_t)(char *args);
 #define CONFIG_HANDLER(x) static void x(char *args)
 
+typedef bool (*web_api_handler_t)(const char *request_url, const char **content);
+#define WEB_API_HANDLER(x) static bool x(const char *request_url, const char **content)
+
 struct module_import_t {
+
 	// Config files
 	const char *(*get_config_directory)(void);
 	void (*config_add_command_handler)(const char *command, config_handler_t method);
@@ -32,6 +36,10 @@ struct module_import_t {
 	void (*message_publish)(const char *message, const char *topic_fmt, ...);
 	void (*message_subscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
 	void (*message_unsubscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
+
+	// Wep API
+	void (*webapi_register_interface)(const char *iface, web_api_handler_t handler);
+	void (*webapi_unregister_interface)(const char *iface);
 
 	// Utilities
 	void *(*alloc)(size_t size);

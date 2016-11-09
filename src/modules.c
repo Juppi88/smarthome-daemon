@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "config.h"
 #include "messaging.h"
+#include "webapi.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -45,6 +46,8 @@ void modules_initialize(void)
 	api.message_publish = messaging_publish;
 	api.message_subscribe = messaging_subscribe;
 	api.message_unsubscribe = messaging_unsubscribe;
+	api.webapi_register_interface = webapi_register_interface;
+	api.webapi_unregister_interface = webapi_unregister_interface;
 	api.alloc = utils_alloc;
 	api.free = utils_free;
 	api.duplicate_string = utils_duplicate_string;

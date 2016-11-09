@@ -2,6 +2,7 @@
 #include "config.h"
 #include "modules.h"
 #include "messaging.h"
+#include "webapi.h"
 #include "utils.h"
 #include <stdio.h>
 
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 	// Initialize subsystems.
 	config_initialize();
 	messaging_initialize();
+	webapi_initialize();
 	modules_initialize();
 
 	// Load the config file. The main config file will contain the modules to be loaded.
@@ -63,11 +65,14 @@ int main(int argc, char **argv)
 
 		// Process subsystems and modules.
 		modules_process();
+		webapi_process();
+
 		utils_thread_sleep(10);
 	}
 
 	// Unload modules and shutdown subsystems.
 	modules_shutdown();
+	webapi_shutdown();
 	messaging_shutdown();
 	config_shutdown();
 
