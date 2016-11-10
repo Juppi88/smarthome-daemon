@@ -57,6 +57,31 @@ void light_destroy(struct light_t *light)
 	api.free(light);
 }
 
+void light_set_toggled(struct light_t *light, bool toggle)
+{
+	if (light == NULL || light->is_toggled == toggle) {
+		return;
+	}
+
+	// Send a message to toggle the status of the light.
+	// We'll update the light struct once the MQTT server confirms the value has been changed.
+	api.message_publish(toggle ? "1" : "0", LIGHT_TOGGLE_TOPIC, light->identifier);
+}
+
+void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
+{
+	if (light == NULL || light->max_brightness == max_brightness) {
+		return;
+	}
+
+	char message[8];
+	sprintf(message, "%u", max_brightness);
+
+	// Send a message to change the max brightness of the light.
+	// We'll update the light struct once the MQTT server confirms the value has been changed.
+	api.message_publish(message, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
+}
+
 CONFIG_HANDLER(set_light_identifier)
 {
 	if (current_light == NULL || args == NULL || *args == 0) {

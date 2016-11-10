@@ -16,6 +16,7 @@ void *utils_alloc(size_t size);
 void utils_free(void *ptr);
 
 char *utils_duplicate_string(const char *text);
+char *utils_tokenize_string(const char *text, char delimiter, char *dst, size_t dst_len);
 
 void utils_thread_create(thread_t method, void *args);
 void utils_thread_sleep(uint32_t ms);

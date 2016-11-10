@@ -51,6 +51,7 @@ void modules_initialize(void)
 	api.alloc = utils_alloc;
 	api.free = utils_free;
 	api.duplicate_string = utils_duplicate_string;
+	api.tokenize_string = utils_tokenize_string;
 
 	// Register config handlers for module loading and unloading.
 	config_add_command_handler("load_module", load_module);

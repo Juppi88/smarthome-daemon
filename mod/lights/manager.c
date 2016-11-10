@@ -1,5 +1,7 @@
 #include "manager.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include "../src/dirent.h"
@@ -10,6 +12,12 @@
 // --------------------------------------------------------------------------------
 
 static struct light_t *lights;
+
+// --------------------------------------------------------------------------------
+
+static struct light_t *lights_get_light(const char *identifier);
+
+WEB_API_HANDLER(lights_process_api_request);
 
 // --------------------------------------------------------------------------------
 
@@ -44,6 +52,9 @@ void lights_initialize(void)
 		}
 	}
 
+	// Register a handler for web API requests.
+	api.webapi_register_interface("lights", lights_process_api_request);
+
 	closedir(dir);
 }
 
@@ -54,6 +65,8 @@ void lights_shutdown(void)
 		tmp = light->next;
 		light_destroy(light);
 	}
+
+	api.webapi_unregister_interface("lights");
 }
 
 void lights_process(void)
@@ -61,4 +74,92 @@ void lights_process(void)
 	LIST_FOREACH(struct light_t, light, lights) {
 		// TODO: Actually process, or something.
 	}
+}
+
+static struct light_t *lights_get_light(const char *identifier)
+{
+	LIST_FOREACH(struct light_t, light, lights) {
+		if (strcmp(light->identifier, identifier) == 0) {
+			return light;
+		}
+	}
+
+	return NULL;
+}
+
+#define ADVANCE_BUFFER(buffer, bufvar, written)\
+	bufvar = buffer + written;\
+	if (written >= sizeof(buffer))\
+		return buffer;
+
+WEB_API_HANDLER(lights_process_api_request)
+{
+	char interface[128], command[128], light_name[128], value[128];
+
+	// Get the command token from the request URL.
+	api.tokenize_string(request_url, '/', interface, sizeof(interface));
+	api.tokenize_string(NULL, '/', command, sizeof(command));
+
+	// Get the list of all lights and their statuses.
+	if (strcmp(command, "status") == 0) {
+
+		static char buffer[10000];
+
+		char *s = buffer;
+		size_t written = 0;
+		const size_t size = sizeof(buffer);
+
+		// Awful shit, this right here is. Yoda I am.
+		written += snprintf(s, size - written, "{\n\"lights\":[\n"); ADVANCE_BUFFER(buffer, s, written);
+
+		LIST_FOREACH(struct light_t, light, lights) {
+			written += snprintf(s, size - written, "\t{\n"); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"identifier\": \"%s\",\n", light->identifier); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"name\": \"%s\",\n", light->name); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"toggled\": \"%u\",\n", light->is_toggled ? 1 : 0); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"max_brightness\": \"%u\"\n", light->max_brightness); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t}%s\n", light->next != NULL ? "," : ""); ADVANCE_BUFFER(buffer, s, written);
+		}
+
+		written += snprintf(s, size - written, "]\n}\n"); ADVANCE_BUFFER(buffer, s, written);
+
+		*content = buffer;
+		return true;
+	}
+
+	// Toggle the light on and off.
+	else if (strcmp(command, "toggle") == 0) {
+
+		api.tokenize_string(NULL, '/', light_name, sizeof(light_name));
+		api.tokenize_string(NULL, '/', value, sizeof(value));
+
+		struct light_t *light = lights_get_light(light_name);
+
+		if (light != NULL && value[0] != 0) {
+			bool toggle = (value[0] != '0');
+			light_set_toggled(light, toggle);
+
+			return true;
+		}
+	}
+
+	// Set the max brightness for the light.
+	else if (strcmp(command, "max_brightness") == 0) {
+
+		api.tokenize_string(NULL, '/', light_name, sizeof(light_name));
+		api.tokenize_string(NULL, '/', value, sizeof(value));
+
+		struct light_t *light = lights_get_light(light_name);
+
+		if (light != NULL && value[0] != 0) {
+
+			uint16_t brightness = (uint16_t)atoi(value);
+			light_set_max_brightness(light, brightness);
+
+			return true;
+		}
+	}
+
+	// Request was not recognised.
+	return false;
 }

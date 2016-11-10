@@ -1,8 +1,10 @@
 #include "webapi.h"
 #include "config.h"
 #include "utils.h"
+#include "logger.h"
 #include "httpserver.h"
 #include <string.h>
+#include <stdlib.h>
 
 static uint16_t webapi_port = 8080;
 static bool listening = false;

@@ -38,6 +38,33 @@ char *utils_duplicate_string(const char *text)
 	return buf;
 }
 
+char *utils_tokenize_string(const char *text, char delimiter, char *dst, size_t dst_len)
+{
+	static const char *s = NULL;
+
+	if (text != NULL) {
+		s = text;
+	}
+
+	// Skip leading delimiter characters.
+	while (*s == delimiter) { ++s; }
+
+	char *d = dst;
+
+	// Copy into the destination buffer until the string end or delimiter is met.
+	while (*s && dst_len-- > 0) {
+		if (*s == delimiter) {
+			break;
+		}
+
+		*d++ = *s++;
+	}
+
+	// Null terminate the destination buffer and return it.
+	*d = 0;
+	return dst;
+}
+
 #ifdef _WIN32
 
 #include <Windows.h>

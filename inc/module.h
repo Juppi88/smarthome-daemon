@@ -45,6 +45,7 @@ struct module_import_t {
 	void *(*alloc)(size_t size);
 	void (*free)(void *ptr);
 	char *(*duplicate_string)(const char *text);
+	char *(*tokenize_string)(const char *text, char delimiter, char *dst, size_t dst_len);
 };
 
 struct module_export_t {

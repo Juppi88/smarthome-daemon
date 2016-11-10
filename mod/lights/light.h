@@ -11,12 +11,14 @@ struct light_t {
 	char *name;
 	bool is_toggled;
 	bool has_subscribed;
-	uint16_t brightness;
 	uint16_t max_brightness;
 	struct light_t *next;
 };
 
 struct light_t *light_create(const char *config_file);
 void light_destroy(struct light_t *light);
+
+void light_set_toggled(struct light_t *light, bool toggle);
+void light_set_max_brightness(struct light_t *light, uint16_t max_brightness);
 
 #endif
