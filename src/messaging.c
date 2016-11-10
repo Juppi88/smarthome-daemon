@@ -125,7 +125,7 @@ void messaging_subscribe(void *context, message_update_t callback, const char *t
 	sub->callback = callback;
 
 	LIST_ADD_ENTRY(subscriptions, sub);
-	
+
 	if (is_connected) {
 		messaging_register_subscription(sub);
 	}
@@ -164,7 +164,7 @@ static void messaging_connect(void)
 	}
 
 	MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
-	MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
+	//MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
 
 	char address[160];
 	snprintf(address, sizeof(address), "tcp://%s:%u", mqtt_server, mqtt_port);

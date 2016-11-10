@@ -75,12 +75,13 @@ void config_parse_file(const char *path)
 	char line[256], c = 0;
 	size_t i = 0;
 
-	while (c != EOF) {
+	while (c != EOF && c != 0xFF) {
+
 		// Read the file line by line.
 		do {
 			c = getc(f);
 
-			if (c == EOF || c == '\n' || c == '\r') {
+			if (c == EOF || c == '\n' || c == '\r' || c == 0xFF) {
 				break;
 			}
 
@@ -104,7 +105,7 @@ void config_parse_line(char *text)
 	register char *s = text;
 	char *cmd, *args;
 	struct handler_t *handler;
-	
+
 	// Strip leading whitespace.
 	while (*s == ' ' || *s == '\t') {
 		++s;
@@ -141,7 +142,7 @@ parse_args:
 	}
 
 	*s++ = 0;
-	
+
 	// Strip leading whitespace.
 	while (*s == ' ' || *s == '\t') {
 		++s;
@@ -163,12 +164,12 @@ parse_args:
 			break;
 		}
 	}
-	
+
 handle_command:
 
 	// Call the handler method for this config command if it exists.
 	handler = config_find_command_handler(cmd);
-	
+
 	if (handler != NULL) {
 		handler->method(args);
 	}
