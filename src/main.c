@@ -4,6 +4,7 @@
 #include "messaging.h"
 #include "webapi.h"
 #include "utils.h"
+#include "logger.h"
 #include <stdio.h>
 
 static bool running = true;
@@ -29,6 +30,11 @@ THREAD(input_thread)
 	return 0;
 }
 
+MESSAGE_HANDLER(debug)
+{
+	output_log("Debug message: %s", message);
+}
+
 #endif
 
 int main(int argc, char **argv)
@@ -51,6 +57,9 @@ int main(int argc, char **argv)
 
 	// Create a thread to read console input.
 	utils_thread_create(input_thread, NULL);
+
+	// Register a listener for debug messages pushed over MQTT.
+	messaging_subscribe(NULL, debug, "debug");
 #endif
 
 	while (running) {

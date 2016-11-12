@@ -38,6 +38,7 @@ struct light_t *light_create(const char *config_file)
 	}
 
 	current_light->max_brightness = MAX_BRIGHTNESS;
+	current_light->transition_time = TRANSITION_TIME;
 
 	// Register listeners for the messages regarding the status of the light.
 	// We should be receiving the current states as soon as messaging is initialized.
@@ -56,7 +57,7 @@ void light_destroy(struct light_t *light)
 	if (light->has_subscribed) {
 		api.message_unsubscribe(light, update_light_toggle, LIGHT_TOGGLE_TOPIC, light->identifier);
 		api.message_unsubscribe(light, update_light_max_brightness, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
-		api.message_unsubscribe(light, update_light_max_brightness, LIGHT_TRANSITION_TIME_TOPIC, light->identifier);
+		api.message_unsubscribe(light, update_light_transition_time, LIGHT_TRANSITION_TIME_TOPIC, light->identifier);
 	}
 
 	api.free(light->identifier);
@@ -85,7 +86,6 @@ void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
 	sprintf(message, "%u", max_brightness);
 
 	// Send a message to change the max brightness of the light.
-	// We'll update the light struct once the MQTT server confirms the value has been changed.
 	api.message_publish(message, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
 }
 
@@ -99,7 +99,6 @@ void light_set_transition_time(struct light_t *light, uint16_t transition_time)
 	sprintf(message, "%u", transition_time);
 
 	// Send a message to change the transition time of the light.
-	// We'll update the light struct once the MQTT server confirms the value has been changed.
 	api.message_publish(message, LIGHT_TRANSITION_TIME_TOPIC, light->identifier);
 }
 
