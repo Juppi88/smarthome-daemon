@@ -4,15 +4,20 @@
 
 static struct light_t *current_light;
 
-#define LIGHT_TOGGLE_TOPIC "lights/%s/toggle"
-#define LIGHT_MAX_BRIGHTNESS_TOPIC "lights/%s/max_brightness"
+#define LIGHT_TOGGLE_TOPIC "home/lights/%s/toggle"
+#define LIGHT_MAX_BRIGHTNESS_TOPIC "home/lights/%s/max_brightness"
+#define LIGHT_TRANSITION_TIME_TOPIC "home/lights/%s/transition"
 
 // --------------------------------------------------------------------------------
 
 CONFIG_HANDLER(set_light_identifier);
 CONFIG_HANDLER(set_light_name);
+
 MESSAGE_HANDLER(update_light_toggle);
 MESSAGE_HANDLER(update_light_max_brightness);
+MESSAGE_HANDLER(update_light_transition_time);
+
+// --------------------------------------------------------------------------------
 
 struct light_t *light_create(const char *config_file)
 {
@@ -38,6 +43,7 @@ struct light_t *light_create(const char *config_file)
 	// We should be receiving the current states as soon as messaging is initialized.
 	api.message_subscribe(current_light, update_light_toggle, LIGHT_TOGGLE_TOPIC, current_light->identifier);
 	api.message_subscribe(current_light, update_light_max_brightness, LIGHT_MAX_BRIGHTNESS_TOPIC, current_light->identifier);
+	api.message_subscribe(current_light, update_light_transition_time, LIGHT_TRANSITION_TIME_TOPIC, current_light->identifier);
 
 	current_light->has_subscribed = true;
 
@@ -50,6 +56,7 @@ void light_destroy(struct light_t *light)
 	if (light->has_subscribed) {
 		api.message_unsubscribe(light, update_light_toggle, LIGHT_TOGGLE_TOPIC, light->identifier);
 		api.message_unsubscribe(light, update_light_max_brightness, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
+		api.message_unsubscribe(light, update_light_max_brightness, LIGHT_TRANSITION_TIME_TOPIC, light->identifier);
 	}
 
 	api.free(light->identifier);
@@ -80,6 +87,20 @@ void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
 	// Send a message to change the max brightness of the light.
 	// We'll update the light struct once the MQTT server confirms the value has been changed.
 	api.message_publish(message, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
+}
+
+void light_set_transition_time(struct light_t *light, uint16_t transition_time)
+{
+	if (light == NULL || light->transition_time == transition_time) {
+		return;
+	}
+
+	char message[8];
+	sprintf(message, "%u", transition_time);
+
+	// Send a message to change the transition time of the light.
+	// We'll update the light struct once the MQTT server confirms the value has been changed.
+	api.message_publish(message, LIGHT_TRANSITION_TIME_TOPIC, light->identifier);
 }
 
 CONFIG_HANDLER(set_light_identifier)
@@ -118,4 +139,10 @@ MESSAGE_HANDLER(update_light_max_brightness)
 {
 	struct light_t *light = (struct light_t *)context;
 	light->max_brightness = (uint16_t)atoi(message);
+}
+
+MESSAGE_HANDLER(update_light_transition_time)
+{
+	struct light_t *light = (struct light_t *)context;
+	light->transition_time = (uint16_t)atoi(message);
 }

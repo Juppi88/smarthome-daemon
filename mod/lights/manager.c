@@ -117,7 +117,8 @@ WEB_API_HANDLER(lights_process_api_request)
 			written += snprintf(s, size - written, "\t\t\"identifier\": \"%s\",\n", light->identifier); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"name\": \"%s\",\n", light->name); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"toggled\": \"%u\",\n", light->is_toggled ? 1 : 0); ADVANCE_BUFFER(buffer, s, written);
-			written += snprintf(s, size - written, "\t\t\"max_brightness\": \"%u\"\n", light->max_brightness); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"max_brightness\": \"%u\",\n", light->max_brightness); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"transition_time\": \"%u\"\n", light->transition_time); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t}%s\n", light->next != NULL ? "," : ""); ADVANCE_BUFFER(buffer, s, written);
 		}
 
@@ -155,6 +156,23 @@ WEB_API_HANDLER(lights_process_api_request)
 
 			uint16_t brightness = (uint16_t)atoi(value);
 			light_set_max_brightness(light, brightness);
+
+			return true;
+		}
+	}
+
+	// Change the transition time for toggling and brightness changes.
+	else if (strcmp(command, "transition_time") == 0) {
+
+		api.tokenize_string(NULL, '/', light_name, sizeof(light_name));
+		api.tokenize_string(NULL, '/', value, sizeof(value));
+
+		struct light_t *light = lights_get_light(light_name);
+
+		if (light != NULL && value[0] != 0) {
+
+			uint16_t time = (uint16_t)atoi(value);
+			light_set_transition_time(light, time);
 
 			return true;
 		}
