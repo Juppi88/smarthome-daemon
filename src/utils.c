@@ -29,7 +29,7 @@ char *utils_duplicate_string(const char *text)
 	}
 
 	char *buf = utils_alloc(strlen(text) + 1), *s = buf;
-	
+
 	while (*text) {
 		*s++ = *text++;
 	}
@@ -117,7 +117,7 @@ void *utils_load_library_symbol(void *handle, const char *name)
 #include <pthread.h>
 #include <unistd.h>
 #include <dlfcn.h>
-#include <unistd.h>
+#include <time.h>
 
 void utils_thread_create(thread_t func, void *args)
 {
@@ -131,7 +131,11 @@ void utils_thread_create(thread_t func, void *args)
 
 void utils_thread_sleep(uint32_t ms)
 {
-	usleep(1000 * ms);
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = 1000000L * ms;
+
+	nanosleep(&t, NULL);
 }
 
 void *utils_load_library(const char *path)
