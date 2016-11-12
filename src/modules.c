@@ -44,6 +44,7 @@ void modules_initialize(void)
 	api.log_write = output_log;
 	api.log_write_error = output_error;
 	api.message_publish = messaging_publish;
+	api.message_publish_data = messaging_publish_data;
 	api.message_subscribe = messaging_subscribe;
 	api.message_unsubscribe = messaging_unsubscribe;
 	api.webapi_register_interface = webapi_register_interface;

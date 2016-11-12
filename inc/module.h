@@ -34,6 +34,7 @@ struct module_import_t {
 
 	// Messaging
 	void (*message_publish)(const char *message, const char *topic_fmt, ...);
+	void (*message_publish_data)(void *data, size_t data_size, const char *topic_fmt, ...);
 	void (*message_subscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
 	void (*message_unsubscribe)(void *context, message_update_t callback, const char *topic_fmt, ...);
 

@@ -95,7 +95,32 @@ void messaging_publish(const char *message, const char *topic_fmt, ...)
 
 	MQTTAsync_message msg = MQTTAsync_message_initializer;
 	msg.payload = (void *)message;
-	msg.payloadlen = (int)strlen(message);
+	msg.payloadlen = (int)strlen(message) + 1;
+	msg.qos = QOS;
+	msg.retained = 0;
+
+	MQTTAsync_sendMessage(client, topic, &msg, &opts);
+}
+
+void messaging_publish_data(void *data, size_t data_size, const char *topic_fmt, ...)
+{
+	if (!is_connected) {
+		return;
+	}
+
+	char topic[256];
+	va_list args;
+
+	va_start(args, topic_fmt);
+	vsnprintf(topic, sizeof(topic), topic_fmt, args);
+	va_end(args);
+
+	MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+	opts.context = client;
+
+	MQTTAsync_message msg = MQTTAsync_message_initializer;
+	msg.payload = data;
+	msg.payloadlen = (int)data_size;
 	msg.qos = QOS;
 	msg.retained = 0;
 
