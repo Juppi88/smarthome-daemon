@@ -4,14 +4,17 @@
 
 #include "main.h"
 
-#define MAX_BRIGHTNESS 255
-#define TRANSITION_TIME 1000
+#define DEFAULT_PWM_SIZE 10
+#define DEFAULT_TRANSITION_TIME 1000
+#define MAX_BRIGHTNESS(pwm) ((1 << pwm) - 1)
 
 struct light_t {
 	char *identifier;
 	char *name;
 	bool has_subscribed;
+	bool is_enabled;
 	bool is_toggled;
+	uint8_t pwm_size;
 	uint16_t max_brightness;
 	uint16_t transition_time;
 	struct light_t *next;

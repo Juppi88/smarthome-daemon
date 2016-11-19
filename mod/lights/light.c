@@ -12,6 +12,8 @@ static struct light_t *current_light;
 
 CONFIG_HANDLER(set_light_identifier);
 CONFIG_HANDLER(set_light_name);
+CONFIG_HANDLER(set_light_enabled);
+CONFIG_HANDLER(set_light_pwm_size);
 
 MESSAGE_HANDLER(update_light_toggle);
 MESSAGE_HANDLER(update_light_max_brightness);
@@ -23,9 +25,16 @@ struct light_t *light_create(const char *config_file)
 {
 	current_light = api.alloc(sizeof(*current_light));
 
+	// Set default values.
+	current_light->is_enabled = true;
+	current_light->pwm_size = DEFAULT_PWM_SIZE;
+	current_light->transition_time = DEFAULT_TRANSITION_TIME;
+
 	// Set listeners for the config keys and parse the config file.
 	api.config_add_command_handler("light_id", set_light_identifier);
 	api.config_add_command_handler("light_name", set_light_name);
+	api.config_add_command_handler("light_enabled", set_light_enabled);
+	api.config_add_command_handler("light_pwm_size", set_light_pwm_size);
 	
 	api.config_parse_file(config_file);
 
@@ -37,9 +46,9 @@ struct light_t *light_create(const char *config_file)
 		return NULL;
 	}
 
-	current_light->max_brightness = MAX_BRIGHTNESS;
-	current_light->transition_time = TRANSITION_TIME;
-
+	// Default to maximum brightness.
+	current_light->max_brightness = MAX_BRIGHTNESS(current_light->pwm_size);
+	
 	// Register listeners for the messages regarding the status of the light.
 	// We should be receiving the current states as soon as messaging is initialized.
 	api.message_subscribe(current_light, update_light_toggle, LIGHT_TOGGLE_TOPIC, current_light->identifier);
@@ -126,6 +135,25 @@ CONFIG_HANDLER(set_light_name)
 	}
 
 	current_light->name = api.duplicate_string(args);
+}
+
+CONFIG_HANDLER(set_light_enabled)
+{
+	if (current_light == NULL || args == NULL || *args == 0) {
+		return;
+	}
+
+	current_light->is_enabled = (atoi(args) != 0);
+}
+
+CONFIG_HANDLER(set_light_pwm_size)
+{
+	if (current_light == NULL || args == NULL || *args == 0) {
+		return;
+	}
+
+	uint8_t pwm = (uint8_t)atoi(args);
+	current_light->pwm_size = (pwm < 32 ? pwm : 31);
 }
 
 MESSAGE_HANDLER(update_light_toggle)
