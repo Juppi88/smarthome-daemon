@@ -25,7 +25,7 @@ lights:
 	gcc $(CFLAGS2) -fPIC -c mod/lights/light.c -o obj/lights/light.o
 	gcc $(CFLAGS2) -fPIC -c mod/lights/manager.c -o obj/lights/manager.o
 
-	gcc -o modules/lights.so obj/lights/main.o obj/lights/light.o obj/lights/manager.o -shared
+	gcc -o modules/lights.so obj/lights/main.o obj/lights/light.o obj/lights/manager.o -lm -shared
 
 mqtt:
 	mkdir -p obj

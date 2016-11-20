@@ -40,7 +40,7 @@ struct light_t *light_create(const char *config_file)
 	api.config_add_command_handler("light_name", set_light_name);
 	api.config_add_command_handler("light_enabled", set_light_enabled);
 	api.config_add_command_handler("light_pwm_size", set_light_pwm_bits);
-	
+
 	api.config_parse_file(config_file);
 
 	// Make sure the config file contained all the necessary info.
@@ -122,7 +122,7 @@ static uint16_t light_brightness_to_pwm(struct light_t *light, uint16_t value)
 	float scaled_brightness = powf(10.0f, exponent) - 1.0f; // brightness scaled to a 0...9 range
 	float scaler = (max_pwm_value - 1) / 9.0f;
 
-	return (uint16_t)(scaled_brightness * scaler);
+	return (uint16_t)(scaled_brightness * scaler) + 1;
 }
 
 static uint16_t light_pwm_to_brightness(struct light_t *light, uint16_t value)
