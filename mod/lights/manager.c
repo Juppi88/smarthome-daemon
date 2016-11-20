@@ -117,13 +117,18 @@ WEB_API_HANDLER(lights_process_api_request)
 		written += snprintf(s, size - written, "{\n\"lights\":[\n"); ADVANCE_BUFFER(buffer, s, written);
 
 		LIST_FOREACH(struct light_t, light, lights) {
+
+			if (!light->is_enabled) {
+				continue;
+			}
+
 			written += snprintf(s, size - written, "\t{\n"); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"identifier\": \"%s\",\n", light->identifier); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"name\": \"%s\",\n", light->name); ADVANCE_BUFFER(buffer, s, written);
-			written += snprintf(s, size - written, "\t\t\"toggled\": \"%u\",\n", light->is_toggled ? 1 : 0); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"toggled\": %s,\n", light->is_toggled ? "true" : "false"); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"max_brightness\": \"%u\",\n", light->max_brightness); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"transition_time\": \"%u\"\n", light->transition_time); ADVANCE_BUFFER(buffer, s, written);
-			written += snprintf(s, size - written, "\t}%s\n", light->next != NULL ? "," : ""); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t}%s\n", light->next != NULL && (light->next->is_enabled || light->next->next != NULL) ? "," : ""); ADVANCE_BUFFER(buffer, s, written);
 		}
 
 		written += snprintf(s, size - written, "]\n}\n"); ADVANCE_BUFFER(buffer, s, written);
