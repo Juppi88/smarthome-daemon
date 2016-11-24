@@ -7,7 +7,7 @@ static struct light_t *current_light;
 
 #define LIGHT_TOGGLE_TOPIC "home/lights/%s/toggle"
 #define LIGHT_MAX_BRIGHTNESS_TOPIC "home/lights/%s/max_brightness"
-#define LIGHT_TRANSITION_TIME_TOPIC "home/lights/%s/transition"
+#define LIGHT_TRANSITION_TIME_TOPIC "home/lights/%s/transition_time"
 
 // --------------------------------------------------------------------------------
 
@@ -131,7 +131,7 @@ static uint16_t light_pwm_to_brightness(struct light_t *light, uint16_t value)
 	uint16_t max_pwm_value = MAX_PWM(light->pwm_bits);
 	float scaler = (max_pwm_value - 1) / 9.0f;
 
-	float x = (float)value;
+	float x = (float)value - 1.0f;
 	x /= scaler;
 	x += 1.0f;
 	x = log10f(x);
