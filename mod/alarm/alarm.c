@@ -118,6 +118,8 @@ static struct alarm_t *alarm_add(void)
 	++alarm_count;
 
 	alarm_sort_all();
+
+	return alarm;
 }
 
 static struct alarm_t *alarm_find(uint8_t identifier)
