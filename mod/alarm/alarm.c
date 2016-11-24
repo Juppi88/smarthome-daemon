@@ -30,6 +30,9 @@ struct alarm_light_t {
 	struct alarm_light_t *next;
 };
 
+#define MAX_WAKEUP_TIME 15
+#define MAX_KEEPON_TIME 60
+
 static uint8_t alarm_wakeup_time = 10; // Minutes before the alarm to start turning the lights on
 static uint8_t alarm_keepon_time = 45; // Minutes after the alarm to keep the lights toggled on
 
@@ -173,7 +176,7 @@ CONFIG_HANDLER(alarm_add_light)
 
 WEB_API_HANDLER(alarm_process_api_request)
 {
-	char interface[128], command[128], alarm_id[128];
+	char interface[128], command[128], alarm_id[128], args[128];
 
 	// Get the command token from the request URL.
 	api.tokenize_string(request_url, '/', interface, sizeof(interface));
@@ -235,8 +238,6 @@ WEB_API_HANDLER(alarm_process_api_request)
 	// Modify an existing alarm entry.
 	else if (strcmp(command, "edit") == 0) {
 
-		char args[128];
-
 		api.tokenize_string(NULL, '/', alarm_id, sizeof(alarm_id));
 		api.tokenize_string(NULL, '/', args, sizeof(args));
 
@@ -262,6 +263,32 @@ WEB_API_HANDLER(alarm_process_api_request)
 					alarm->minute = (alarm_minute < 60 ? alarm_minute : 0);
 				}
 			}
+		}
+
+		return true;
+	}
+
+	// Alter the wakeup period.
+	else if (strcmp(command, "wakeup_time") == 0) {
+
+		api.tokenize_string(NULL, '/', args, sizeof(args));
+
+		if (*args) {
+			uint32_t wakeup = (uint32_t)atoi(args);
+			alarm_wakeup_time = (wakeup <= MAX_WAKEUP_TIME ? wakeup : MAX_WAKEUP_TIME);
+		}
+
+		return true;
+	}
+
+	// Alter the time to keep the light on after an alarm.
+	else if (strcmp(command, "keepon_time") == 0) {
+
+		api.tokenize_string(NULL, '/', args, sizeof(args));
+
+		if (*args) {
+			uint32_t keepon = (uint32_t)atoi(args);
+			alarm_keepon_time = (keepon <= MAX_KEEPON_TIME ? keepon : MAX_KEEPON_TIME);
 		}
 
 		return true;
