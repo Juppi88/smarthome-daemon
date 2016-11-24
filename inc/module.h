@@ -42,6 +42,9 @@ struct module_import_t {
 	void (*webapi_register_interface)(const char *iface, web_api_handler_t handler);
 	void (*webapi_unregister_interface)(const char *iface);
 
+	// Module interaction
+	void *(*get_module_api)(const char *module_name);
+
 	// Utilities
 	void *(*alloc)(size_t size);
 	void (*free)(void *ptr);
@@ -50,9 +53,13 @@ struct module_import_t {
 };
 
 struct module_export_t {
-	uint32_t api_version;
+	uint32_t api_version;	// module.h version used to compile this module with
+	void *api;				// API this module exports to other modules (optional)
+
 	void (*process)(void);
 	void (*shutdown)(void);
+	void (*on_module_loaded)(const char *module);
+	void (*on_module_unloaded)(const char *module);
 };
 
 typedef struct module_export_t *(*module_initialize_t)(struct module_import_t *api);

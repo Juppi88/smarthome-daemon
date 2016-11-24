@@ -85,6 +85,12 @@ void light_set_toggled(struct light_t *light, bool toggle)
 	// Send a message to toggle the status of the light.
 	// We'll update the light struct once the MQTT server confirms the value has been changed.
 	api.message_publish(toggle ? "1" : "0", LIGHT_TOGGLE_TOPIC, light->identifier);
+
+	// If the alarm module is loaded, inform it that a state of a light has been changed.
+	// This will halt any ongoing alarms.
+	if (mod_alarm != NULL) {
+		mod_alarm->on_light_state_changed(light->name);
+	}
 }
 
 void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
@@ -98,6 +104,12 @@ void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
 
 	// Send a message to change the max brightness of the light.
 	api.message_publish(message, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
+
+	// If the alarm module is loaded, inform it that a state of a light has been changed.
+	// This will halt any ongoing alarms.
+	if (mod_alarm != NULL) {
+		mod_alarm->on_light_state_changed(light->name);
+	}
 }
 
 void light_set_transition_time(struct light_t *light, uint16_t transition_time)

@@ -19,7 +19,7 @@ struct module_t {
 };
 
 static struct module_import_t api;
-static struct module_t *first;
+static struct module_t *modules;
 
 #ifdef _WIN32
 #define MODULE_EXTENSION ".dll"
@@ -32,8 +32,12 @@ static struct module_t *first;
 static void modules_load(const char *name);
 static void modules_unload(struct module_t *module);
 static struct module_t *modules_find(const char *name);
+static void *modules_get_api_pointer(const char *name);
+
 CONFIG_HANDLER(load_module);
 CONFIG_HANDLER(unload_module);
+
+// --------------------------------------------------------------------------------
 
 void modules_initialize(void)
 {
@@ -49,6 +53,7 @@ void modules_initialize(void)
 	api.message_unsubscribe = messaging_unsubscribe;
 	api.webapi_register_interface = webapi_register_interface;
 	api.webapi_unregister_interface = webapi_unregister_interface;
+	api.get_module_api = modules_get_api_pointer;
 	api.alloc = utils_alloc;
 	api.free = utils_free;
 	api.duplicate_string = utils_duplicate_string;
@@ -61,17 +66,17 @@ void modules_initialize(void)
 
 void modules_shutdown(void)
 {
-	for (struct module_t *mod = first, *tmp; mod != NULL; mod = tmp) {
+	LIST_FOREACH_SAFE(struct module_t, mod, tmp, modules) {
 		tmp = mod->next;
 		modules_unload(mod);
 	}
 
-	first = NULL;
+	modules = NULL;
 }
 
 void modules_process(void)
 {
-	for (struct module_t *mod = first; mod != NULL; mod = mod->next) {
+	LIST_FOREACH(struct module_t, mod, modules) {
 		if (mod->exports.process != NULL) {
 			mod->exports.process();
 		}
@@ -115,22 +120,42 @@ static void modules_load(const char *name)
 		return;
 	}
 
-	// Everything is fine, add the module to the loaded module list.
+	// Everything is fine, populate the module info.
 	struct module_t *module = utils_alloc(sizeof(*module));
 	module->name = utils_duplicate_string(name);
 	module->handle = handle;
 	module->exports = *modexport;
 
-	module->next = first;
-	first = module;
+	// Inform the loaded module about other modules by calling the on_module_load method.
+	if (module->exports.on_module_loaded != NULL) {
+		LIST_FOREACH(struct module_t, mod, modules) {
+			module->exports.on_module_loaded(mod->name);
+		}
+	}
+
+	// Inform all loaded modules about the new module.
+	LIST_FOREACH(struct module_t, mod, modules) {
+		if (mod->exports.on_module_loaded != NULL) {
+			mod->exports.on_module_loaded(module->name);
+		}
+	}
+
+	// Add the module to the loaded module list.
+	LIST_ADD_ENTRY(module, modules);
 
 	output_log("Loaded module '%s'", module->name);
 }
 
 static void modules_unload(struct module_t *module)
 {
-	if (first == module) {
-		first = module->next;
+	// Remove the module from the loaded mod list.
+	LIST_REMOVE_ENTRY(struct module_t, module, modules);
+
+	// Inform all the other loaded modules about the unloaded module.
+	LIST_FOREACH(struct module_t, mod, modules) {
+		if (mod->exports.on_module_unloaded != NULL) {
+			mod->exports.on_module_unloaded(module->name);
+		}
 	}
 
 	// Call the shutdown method for the module.
@@ -149,13 +174,27 @@ static void modules_unload(struct module_t *module)
 
 static struct module_t *modules_find(const char *name)
 {
-	for (struct module_t *mod = first; mod != NULL; mod = mod->next) {
+	LIST_FOREACH(struct module_t, mod, modules) {
 		if (strcmp(mod->name, name) == 0) {
 			return mod;
 		}
 	}
 
 	return NULL;
+}
+
+static void *modules_get_api_pointer(const char *name)
+{
+	if (name == NULL) {
+		return NULL;
+	}
+
+	struct module_t *module = modules_find(name);
+	if (module == NULL) {
+		return NULL;
+	}
+
+	return module->exports.api;
 }
 
 CONFIG_HANDLER(load_module)
