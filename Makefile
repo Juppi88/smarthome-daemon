@@ -27,6 +27,15 @@ lights:
 
 	gcc -o modules/lights.so obj/lights/main.o obj/lights/light.o obj/lights/manager.o -lm -shared
 
+alarm:
+	mkdir -p obj/alarm
+	mkdir -p modules
+
+	gcc $(CFLAGS2) -fPIC -c mod/alarm/main.c -o obj/alarm/main.o
+	gcc $(CFLAGS2) -fPIC -c mod/alarm/alarm.c -o obj/alarm/alarm.o
+
+	gcc -o modules/alarm.so obj/alarm/main.o obj/alarm/alarm.o -shared
+
 mqtt:
 	mkdir -p obj
 	
@@ -59,4 +68,5 @@ clean:
 all:
 	make core
 	make lights
+	make alarm
 	make link
