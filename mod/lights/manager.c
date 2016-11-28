@@ -73,8 +73,20 @@ void lights_shutdown(void)
 
 void lights_process(void)
 {
-	LIST_FOREACH(struct light_t, light, lights) {
-		// TODO: Actually process, or something.
+	// Turns out we don't have anything to do here, at least just yet.
+	//LIST_FOREACH(struct light_t, light, lights) {
+	//}
+}
+
+void lights_set_min_brightness(const char *identifier, float percentage)
+{
+	if (identifier == NULL) {
+		return;
+	}
+
+	struct light_t *light = lights_get_light(identifier);
+	if (light != NULL) {
+		light_set_min_brightness(light, percentage);
 	}
 }
 

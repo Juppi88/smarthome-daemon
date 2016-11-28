@@ -6,6 +6,7 @@
 static struct light_t *current_light;
 
 #define LIGHT_TOGGLE_TOPIC "home/lights/%s/toggle"
+#define LIGHT_MIN_BRIGHTNESS_TOPIC "home/lights/%s/min_brightness"
 #define LIGHT_MAX_BRIGHTNESS_TOPIC "home/lights/%s/max_brightness"
 #define LIGHT_TRANSITION_TIME_TOPIC "home/lights/%s/transition_time"
 
@@ -32,6 +33,7 @@ struct light_t *light_create(const char *config_file)
 	// Set default values.
 	current_light->is_enabled = true;
 	current_light->pwm_bits = DEFAULT_PWM_BITS;
+	current_light->min_brightness = 0;
 	current_light->max_brightness = DEFAULT_BRIGHTNESS;
 	current_light->transition_time = DEFAULT_TRANSITION_TIME;
 
@@ -85,12 +87,26 @@ void light_set_toggled(struct light_t *light, bool toggle)
 	// Send a message to toggle the status of the light.
 	// We'll update the light struct once the MQTT server confirms the value has been changed.
 	api.message_publish(toggle ? "1" : "0", LIGHT_TOGGLE_TOPIC, light->identifier);
+}
 
-	// If the alarm module is loaded, inform it that a state of a light has been changed.
-	// This will halt any ongoing alarms.
-	if (mod_alarm != NULL) {
-		mod_alarm->on_light_state_changed(light->name);
+void light_set_min_brightness(struct light_t *light, float min_brightness_percentage)
+{
+	if (light == NULL || light->min_brightness == min_brightness_percentage) {
+		return;
 	}
+
+	uint16_t brightness = (uint16_t)(min_brightness_percentage * light->max_brightness);
+
+	// Make sure the override brightness is always at least 1.
+	if (min_brightness_percentage > 0 && brightness == 0) {
+		brightness = 1;
+	}
+	
+	char message[8];
+	sprintf(message, "%u", light_brightness_to_pwm(light, brightness));
+
+	// Send a message to change the minimum (override) brightness of the light.
+	api.message_publish(message, LIGHT_MIN_BRIGHTNESS_TOPIC, light->identifier);
 }
 
 void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
@@ -99,16 +115,20 @@ void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
 		return;
 	}
 
+	uint16_t old_brightness = light->max_brightness;
+
 	char message[8];
 	sprintf(message, "%u", light_brightness_to_pwm(light, max_brightness));
 
 	// Send a message to change the max brightness of the light.
 	api.message_publish(message, LIGHT_MAX_BRIGHTNESS_TOPIC, light->identifier);
 
-	// If the alarm module is loaded, inform it that a state of a light has been changed.
-	// This will halt any ongoing alarms.
-	if (mod_alarm != NULL) {
-		mod_alarm->on_light_state_changed(light->name);
+	// If an override minimum brightness has been defined for the light, update it too.
+	float override_brightness = light->min_brightness;
+
+	if (override_brightness != 0) {
+		light->min_brightness = 0; // Force re-evaluation.
+		light_set_min_brightness(light, override_brightness);
 	}
 }
 

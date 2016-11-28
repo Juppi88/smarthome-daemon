@@ -16,6 +16,7 @@ struct light_t {
 	bool is_enabled;
 	bool is_toggled;
 	uint8_t pwm_bits;
+	float min_brightness; // As a percentage of the maximum brightness.
 	uint16_t max_brightness;
 	uint16_t transition_time;
 	struct light_t *next;
@@ -25,6 +26,7 @@ struct light_t *light_create(const char *config_file);
 void light_destroy(struct light_t *light);
 
 void light_set_toggled(struct light_t *light, bool toggle);
+void light_set_min_brightness(struct light_t *light, float min_brightness_percentage);
 void light_set_max_brightness(struct light_t *light, uint16_t max_brightness);
 void light_set_transition_time(struct light_t *light, uint16_t transition_time);
 
