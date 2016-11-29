@@ -99,16 +99,16 @@ void light_set_min_brightness(struct light_t *light, float min_brightness_percen
 
 	uint16_t brightness = (uint16_t)(min_brightness_percentage * light->max_brightness);
 
-	// Make sure the override brightness is always at least 1.
-	if (min_brightness_percentage != 0 && brightness == 0) {
-		brightness = 1;
-	}
-	else if (min_brightness_percentage == 0) {
+	// Make sure the override brightness is always at least 1 when it's set.
+	if (min_brightness_percentage == 0) {
 		brightness = 0;
+	}
+	else {
+		brightness = light_brightness_to_pwm(light, brightness);
 	}
 
 	char message[8];
-	sprintf(message, "%u", light_brightness_to_pwm(light, brightness));
+	sprintf(message, "%u", brightness);
 
 	// Send a message to change the minimum (override) brightness of the light.
 	api.message_publish(message, LIGHT_MIN_BRIGHTNESS_TOPIC, light->identifier);
