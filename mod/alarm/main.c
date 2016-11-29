@@ -32,7 +32,7 @@ MODULE_API struct module_export_t *module_initialize(struct module_import_t *imp
 MODULE_API void on_module_loaded(const char *mod)
 {
 	// If the lights module is loaded, request its API pointer.
-	if (strcmp(mod, "lights")) {
+	if (strcmp(mod, "lights") == 0) {
 		mod_lights = api.get_module_api(mod);
 	}
 }
@@ -40,7 +40,7 @@ MODULE_API void on_module_loaded(const char *mod)
 MODULE_API void on_module_unloaded(const char *mod)
 {
 	// If the lights module is unloaded, invalidate its API pointer.
-	if (strcmp(mod, "lights")) {
+	if (strcmp(mod, "lights") == 0) {
 		mod_lights = NULL;
 	}
 }

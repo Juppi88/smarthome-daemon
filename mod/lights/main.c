@@ -48,7 +48,7 @@ MODULE_API struct module_export_t *module_initialize(struct module_import_t *imp
 MODULE_API void on_module_loaded(const char *mod)
 {
 	// If the alarm module is loaded, request its API pointer.
-	if (strcmp(mod, "alarm")) {
+	if (strcmp(mod, "alarm") == 0) {
 		mod_alarm = api.get_module_api(mod);
 	}
 }
@@ -56,7 +56,7 @@ MODULE_API void on_module_loaded(const char *mod)
 MODULE_API void on_module_unloaded(const char *mod)
 {
 	// If the alarm module is unloaded, invalidate its API pointer.
-	if (strcmp(mod, "alarm")) {
+	if (strcmp(mod, "alarm") == 0) {
 		mod_alarm = NULL;
 	}
 }

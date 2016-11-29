@@ -95,13 +95,18 @@ void light_set_min_brightness(struct light_t *light, float min_brightness_percen
 		return;
 	}
 
+	light->min_brightness = min_brightness_percentage;
+
 	uint16_t brightness = (uint16_t)(min_brightness_percentage * light->max_brightness);
 
 	// Make sure the override brightness is always at least 1.
-	if (min_brightness_percentage > 0 && brightness == 0) {
+	if (min_brightness_percentage != 0 && brightness == 0) {
 		brightness = 1;
 	}
-	
+	else if (min_brightness_percentage == 0) {
+		brightness = 0;
+	}
+
 	char message[8];
 	sprintf(message, "%u", light_brightness_to_pwm(light, brightness));
 
@@ -114,8 +119,6 @@ void light_set_max_brightness(struct light_t *light, uint16_t max_brightness)
 	if (light == NULL || light->max_brightness == max_brightness) {
 		return;
 	}
-
-	uint16_t old_brightness = light->max_brightness;
 
 	char message[8];
 	sprintf(message, "%u", light_brightness_to_pwm(light, max_brightness));

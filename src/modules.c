@@ -141,7 +141,7 @@ static void modules_load(const char *name)
 	}
 
 	// Add the module to the loaded module list.
-	LIST_ADD_ENTRY(module, modules);
+	LIST_ADD_ENTRY(modules, module);
 
 	output_log("Loaded module '%s'", module->name);
 }

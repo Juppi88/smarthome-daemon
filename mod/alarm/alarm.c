@@ -117,23 +117,30 @@ void alarm_process(void)
 
 	// Find the highest progress for an alarm. This is used to set an override brightness for the lights.
 	// If no alarms are in progress, the progress will be left to 0 and all lights will turn off.
-	float alarm_progress = 0;
+	float alarm_progress = 0.0f;
 
 	LIST_FOREACH(struct alarm_t, alarm, alarms) {
-		
+
 		// Is the alarm in progress?
 		if (alarm->alarm_time != 0 &&
-			alarm->alarm_time - alarm_wakeup_time * 60 < now) {
+			alarm->alarm_time - alarm_wakeup_time * 60 <= now) {
 
 			// If the alarm has ended, suspend it and calculate a new timestamp for the next alarm cycle.
-			if (alarm->alarm_time + alarm_keepon_time * 60 < now) {
+			if (alarm->alarm_time + alarm_keepon_time * 60 <= now) {
+
 				alarm_calculate_next_trigger_time(alarm);
 				continue;
 			}
 
 			// Calculate the progress for the alarm.
-			float progress = (float)(now - alarm->alarm_time) / (alarm_wakeup_time * 60);
-			progress = progress < 1 ? progress: 1;
+			float progress = 1.0f;
+
+			if (alarm_wakeup_time != 0) {
+				time_t active = now - (alarm->alarm_time - alarm_wakeup_time * 60);
+
+				progress = (float)active / (alarm_wakeup_time * 60);
+				progress = progress < 1 ? progress : 1;
+			}
 
 			// If this is the active alarm which has progressed the furthest, use it to determine the brightness of the lights.
 			if (progress > alarm_progress) {
@@ -212,7 +219,7 @@ static void alarm_calculate_next_trigger_time(struct alarm_t *alarm)
 
 		info = localtime(&now);
 	}
-	
+
 	// Find the day of the next alarm.
 	int days_until_alarm = 0;
 	int days_until_potential_alarm = -1;
@@ -225,12 +232,12 @@ static void alarm_calculate_next_trigger_time(struct alarm_t *alarm)
 			day = 0;
 		}
 
-		// There is an alarm set for this day. 
+		// There is an alarm set for this day.
 		if ((alarm->days & (1 << day)) != 0) {
 
 			// If the time of the alarm hasn't passed yet, we've found our day. If not, continue the search.
-			if (info->tm_hour > alarm->hour ||
-				(info->tm_hour == alarm->hour && info->tm_min > alarm->minute)) {
+			if (info->tm_hour < alarm->hour ||
+				(info->tm_hour == alarm->hour && info->tm_min < alarm->minute)) {
 
 				day_found = true;
 				break;
@@ -246,7 +253,6 @@ static void alarm_calculate_next_trigger_time(struct alarm_t *alarm)
 	// If we didn't find a potential candidate within the next 7 days, try the following week.
 	if (!day_found) {
 		days_until_alarm = days_until_potential_alarm;
-		return;
 	}
 
 	// This should never happen! Let's make sure it doesn't anything in case it does, though.
@@ -262,7 +268,7 @@ static void alarm_calculate_next_trigger_time(struct alarm_t *alarm)
 
 	alarm->alarm_time = mktime(info);
 
-	printf("(%d) Next alarm is set to %d.%d.%d at %02d:%02d\n", alarm->identifier, info->tm_mday, info->tm_mon, info->tm_year, info->tm_hour, info->tm_min);
+	//api.log_write("[Alarm] Next alarm for ID %u is set to %d.%d.%d at %02d:%02d", alarm->identifier, info->tm_mday, info->tm_mon + 1, info->tm_year + 1900, info->tm_hour, info->tm_min);
 }
 
 static void alarm_sort_all(void)
@@ -333,7 +339,7 @@ WEB_API_HANDLER(alarm_process_api_request)
 		written += snprintf(s, size - written, "{\n\"wakeup_time\": %u,\n", alarm_wakeup_time); ADVANCE_BUFFER(buffer, s, written);
 		written += snprintf(s, size - written, "\"keepon_time\": %u,\n", alarm_keepon_time); ADVANCE_BUFFER(buffer, s, written);
 		written += snprintf(s, size - written, "\"alarms\":[\n"); ADVANCE_BUFFER(buffer, s, written);
-		
+
 		LIST_FOREACH(struct alarm_t, alarm, alarms) {
 
 			written += snprintf(s, size - written, "\t{\n"); ADVANCE_BUFFER(buffer, s, written);
@@ -341,10 +347,10 @@ WEB_API_HANDLER(alarm_process_api_request)
 			written += snprintf(s, size - written, "\t\t\"hour\": \"%u\",\n", alarm->hour); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"minute\": \"%u\",\n", alarm->minute); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t\t\"days\": \"%u\",\n", alarm->days); ADVANCE_BUFFER(buffer, s, written);
-			written += snprintf(s, size - written, "\t\t\"in_progress\": \"%s\"\n", (alarm->alarm_time != 0 && alarm->alarm_time <= now ? "true" : "false")); ADVANCE_BUFFER(buffer, s, written);
+			written += snprintf(s, size - written, "\t\t\"in_progress\": %s\n", (alarm->alarm_time != 0 && alarm->alarm_time <= now ? "true" : "false")); ADVANCE_BUFFER(buffer, s, written);
 			written += snprintf(s, size - written, "\t}%s\n", alarm->next != NULL ? "," : ""); ADVANCE_BUFFER(buffer, s, written);
 		}
-		
+
 		written += snprintf(s, size - written, "]\n}\n"); ADVANCE_BUFFER(buffer, s, written);
 
 		return true;
