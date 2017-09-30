@@ -111,6 +111,7 @@ static struct http_response_t webapi_handle_request(struct http_request_t *reque
 	response.message = HTTP_400_BAD_REQUEST;
 	response.content = NULL;
 	response.content_type = NULL;
+	response.content_length = 0;
 	
 	// Find the appropriate handler and call it.
 	char interface_name[256], *dst = interface_name;
