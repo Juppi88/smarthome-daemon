@@ -7,6 +7,7 @@
 #include "../src/dirent.h"
 #else
 #include <dirent.h>
+#include <sys/sysinfo.h>
 #ifndef DT_DIR
 #define DT_DIR 0x4
 #endif
@@ -126,7 +127,19 @@ WEB_API_HANDLER(lights_process_api_request)
 		*content = buffer;
 
 		// Awful shit, this right here is. Yoda I am.
-		written += snprintf(s, size - written, "{\n\"lights\":[\n"); ADVANCE_BUFFER(buffer, s, written);
+		// Write Raspberry Pi status. This should really be elsewhere, but I can't be arsed to at this point.
+		struct sysinfo info;
+		sysinfo(&info);
+
+		written += snprintf(s, size - written, "{\n\"status\":{\n"); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\t\"uptime\": %ld,\n", (long)info.uptime); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\t\"load\":[ %f, %f, %f ],\n", info.loads[0] / 65536.0f, info.loads[1] / 65536.0f, info.loads[2] / 65536.0f); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\t\"memory_total\": %u,\n", (unsigned int)(info.totalram / 1024)); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\t\"memory_free\": %u\n", (unsigned int)(info.freeram / 1024)); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\n},\n"); ADVANCE_BUFFER(buffer, s, written);
+
+		// Write the list of lights
+		written += snprintf(s, size - written, "\"lights\":[\n"); ADVANCE_BUFFER(buffer, s, written);
 
 		LIST_FOREACH(struct light_t, light, lights) {
 
@@ -196,6 +209,13 @@ WEB_API_HANDLER(lights_process_api_request)
 
 			return true;
 		}
+	}
+
+	// Power off the Raspberry Pi.
+	else if (strcmp(command, "poweroff") == 0) {
+
+		system("sudo poweroff");
+		return true;
 	}
 
 	// Request was not recognised.
