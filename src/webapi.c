@@ -23,6 +23,7 @@ static struct web_api_interface_t *webapi_get_interface(const char *name);
 static struct http_response_t webapi_handle_request(struct http_request_t *request);
 
 CONFIG_HANDLER(set_webapi_port);
+CONFIG_HANDLER(set_webapi_static_directory);
 
 // --------------------------------------------------------------------------------
 
@@ -30,6 +31,9 @@ void webapi_initialize(void)
 {
 	// Add a config handler for the web server's port.
 	config_add_command_handler("webapi_port", set_webapi_port);
+
+	// Set the location of the static HTML files.
+	config_add_command_handler("webapi_static_directory", set_webapi_static_directory);
 }
 
 void webapi_shutdown(void)
@@ -159,4 +163,14 @@ CONFIG_HANDLER(set_webapi_port)
 	}
 
 	webapi_port = (uint16_t)atoi(args);
+}
+
+CONFIG_HANDLER(set_webapi_static_directory)
+{
+	if (*args == 0) {
+		output_log("Usage: webapi_static_directory <relative path>");
+		return;
+	}
+
+	http_server_add_static_directory("/", args);
 }

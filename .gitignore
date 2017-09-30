@@ -11,3 +11,6 @@ x86/
 *.user
 *.sublime-workspace
 smarthome
+config/
+modules/
+web/

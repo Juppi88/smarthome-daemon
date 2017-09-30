@@ -3,8 +3,8 @@
 	[
 		{
 			"path": ".",
-			"folder_exclude_patterns": [ "bin", "obj", ".vs", "Debug", "Release", "x64" ],
-			"file_exclude_patterns": [ "smarthome", "*.sln", "*.vcxproj", "*.filters" ]
+			"folder_exclude_patterns": [ "bin", "obj", ".vs", "Debug", "Release", "x64", "config", "modules", ".git" ],
+			"file_exclude_patterns": [ "smarthome", "*.sln", "*.vcxproj", "*.filters", "httpservertest", "*.swp" ]
 		}
 	]
 }

@@ -38,7 +38,7 @@ alarm:
 
 mqtt:
 	mkdir -p obj
-	
+
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTAsync.c -o obj/MQTTAsync.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPersistence.c -o obj/MQTTPersistence.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPersistenceDefault.c -o obj/MQTTPersistenceDefault.o
