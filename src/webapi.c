@@ -76,21 +76,18 @@ void webapi_process(void)
 		struct server_settings_t settings;
 		memset(&settings, 0, sizeof(settings));
 
+		struct server_directory_t directories[] = { { "/", webapi_static_directory } };
+
 		settings.handler = webapi_handle_request;
 		settings.port = webapi_port;
 		settings.timeout = 10;
 		settings.max_connections = 25;
 		settings.connection_timeout = 60;
+		settings.directories = directories;
+		settings.directories_len = 0;
 
 		// Serve static files from a dedicated folder.
 		if (webapi_static_directory != NULL) {
-
-			struct server_directory_t directories[] = { { "/", webapi_static_directory } };
-			
-			// ... Why on earth does this if block not work without the empty printf?
-			printf("");
-
-			settings.directories = directories;
 			settings.directories_len = 1;
 		}
 
