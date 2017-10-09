@@ -12,6 +12,8 @@
 
 #define MODULE_API_VERSION 1
 
+// --------------------------------------------------------------------------------
+
 typedef void (*message_update_t)(const char *topic, const char *message, void *context);
 #define MESSAGE_HANDLER(x) static void x(const char *topic, const char *message, void *context)
 
@@ -20,6 +22,8 @@ typedef void (*config_handler_t)(char *args);
 
 typedef bool (*web_api_handler_t)(const char *request_url, const char **content);
 #define WEB_API_HANDLER(x) static bool x(const char *request_url, const char **content)
+
+// --------------------------------------------------------------------------------
 
 struct module_import_t {
 
@@ -52,6 +56,8 @@ struct module_import_t {
 	char *(*tokenize_string)(const char *text, char delimiter, char *dst, size_t dst_len);
 };
 
+// --------------------------------------------------------------------------------
+
 struct module_export_t {
 	uint32_t api_version;	// module.h version used to compile this module with
 	void *api;				// API this module exports to other modules (optional)
@@ -61,6 +67,8 @@ struct module_export_t {
 	void (*on_module_loaded)(const char *module);
 	void (*on_module_unloaded)(const char *module);
 };
+
+// --------------------------------------------------------------------------------
 
 typedef struct module_export_t *(*module_initialize_t)(struct module_import_t *api);
 

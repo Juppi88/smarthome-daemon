@@ -5,8 +5,11 @@
 #include "httpserver.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static uint16_t webapi_port = 8080;
+static char *webapi_static_directory;
+
 static bool listening = false;
 
 struct web_api_interface_t {
@@ -16,6 +19,15 @@ struct web_api_interface_t {
 };
 
 struct web_api_interface_t *interfaces = NULL;
+
+// --------------------------------------------------------------------------------
+
+#define JSON_MIME_TYPE "application/json";
+
+#define EMPTY_RESULT_FORMAT \
+"{\n"\
+"	\"result\": %s\n"\
+"}\n"
 
 // --------------------------------------------------------------------------------
 
@@ -44,6 +56,11 @@ void webapi_shutdown(void)
 		listening = false;
 	}
 
+	if (webapi_static_directory != NULL) {
+		utils_free(webapi_static_directory);
+		webapi_static_directory = NULL;
+	}
+
 	// Destroy all interfaces.
 	LIST_FOREACH_SAFE(struct web_api_interface_t, iface, tmp, interfaces) {
 		utils_free(iface->name);
@@ -56,9 +73,35 @@ void webapi_process(void)
 	if (!listening) {
 		// If the HTTP server is not listening yet, initialize it.
 		// We do the initialization in the processing loop to give the config a chance to load.
-		if (http_server_initialize(webapi_port, webapi_handle_request)) {
+		struct server_settings_t settings;
+		memset(&settings, 0, sizeof(settings));
+
+		settings.handler = webapi_handle_request;
+		settings.port = webapi_port;
+		settings.timeout = 10;
+		settings.max_connections = 25;
+		settings.connection_timeout = 60;
+
+		// Serve static files from a dedicated folder.
+		if (webapi_static_directory != NULL) {
+
+			struct server_directory_t directories[] = { { "/", webapi_static_directory } };
+			
+			// ... Why on earth does this if block not work without the empty printf?
+			printf("");
+
+			settings.directories = directories;
+			settings.directories_len = 1;
+		}
+
+		if (http_server_initialize(settings)) {
+
 			listening = true;
 			output_log("Started web API server on port %u", webapi_port);
+		}
+		else {
+			output_error("Failed to start the web API server on port %u, retrying in 5 seconds...", webapi_port);
+			utils_thread_sleep(5000);
 		}
 	}
 	else {
@@ -135,20 +178,29 @@ static struct http_response_t webapi_handle_request(struct http_request_t *reque
 
 	*dst = 0;
 
+	char result[32];
+
 	// Try to find the handler for the requested interface.
 	struct web_api_interface_t *interface = webapi_get_interface(interface_name);
 
 	if (interface != NULL) {
+
 		// Interface was found, call the handler and let the HTTP server know whether the request was valid.
 		const char *content = NULL;
 
 		if (interface->handler(request->request, &content)) {
+
 			response.message = HTTP_200_OK;
+			response.content_type = JSON_MIME_TYPE;
 			
 			// The response also contains some data in JSON format.
+			// Every response should at least contain a 'result' bool field.
 			if (content != NULL) {
 				response.content = content;
-				response.content_type = "text/json";
+			}
+			else {
+				snprintf(result, sizeof(result), EMPTY_RESULT_FORMAT, "true");
+				response.content = result;
 			}
 		}
 	}
@@ -173,5 +225,9 @@ CONFIG_HANDLER(set_webapi_static_directory)
 		return;
 	}
 
-	http_server_add_static_directory("/", args);
+	if (webapi_static_directory != NULL) {
+		utils_free(webapi_static_directory);
+	}
+
+	webapi_static_directory = utils_duplicate_string(args);
 }

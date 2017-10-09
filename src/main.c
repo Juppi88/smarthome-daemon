@@ -24,7 +24,8 @@ THREAD(input_thread)
 	(void)args;
 
 	while (running) {
-		fgets(input, sizeof(input), stdin);
+		char * text = fgets(input, sizeof(input), stdin);
+		(void)text;
 	}
 
 	return 0;
@@ -76,7 +77,7 @@ int main(int argc, char **argv)
 		modules_process();
 		webapi_process();
 
-		utils_thread_sleep(10);
+		// No need to sleep here because the web API blocks for 10ms.
 	}
 
 	// Unload modules and shutdown subsystems.

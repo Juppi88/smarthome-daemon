@@ -10,6 +10,7 @@ x86/
 *.opendb
 *.user
 *.sublime-workspace
+*.sh
 smarthome
 config/
 modules/

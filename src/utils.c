@@ -131,9 +131,12 @@ void utils_thread_create(thread_t func, void *args)
 
 void utils_thread_sleep(uint32_t ms)
 {
+	long seconds = (long)ms / 1000L;
+	long millis = (long)ms - 1000L * seconds;
+
 	struct timespec t;
-	t.tv_sec = 0;
-	t.tv_nsec = 1000000L * ms;
+	t.tv_sec = seconds;
+	t.tv_nsec = 1000000L * millis;
 
 	nanosleep(&t, NULL);
 }

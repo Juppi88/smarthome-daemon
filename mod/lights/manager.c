@@ -126,12 +126,15 @@ WEB_API_HANDLER(lights_process_api_request)
 
 		*content = buffer;
 
+		// Write a result field indicating that the API call was successful.
+		written += snprintf(s, size - written, "{\n\"result\": true,\n"); ADVANCE_BUFFER(buffer, s, written);
+
 		// Awful shit, this right here is. Yoda I am.
 		// Write Raspberry Pi status. This should really be elsewhere, but I can't be arsed to at this point.
 		struct sysinfo info;
 		sysinfo(&info);
 
-		written += snprintf(s, size - written, "{\n\"status\":{\n"); ADVANCE_BUFFER(buffer, s, written);
+		written += snprintf(s, size - written, "\"status\":{\n"); ADVANCE_BUFFER(buffer, s, written);
 		written += snprintf(s, size - written, "\t\"uptime\": %ld,\n", (long)info.uptime); ADVANCE_BUFFER(buffer, s, written);
 		written += snprintf(s, size - written, "\t\"load\":[ %f, %f, %f ],\n", info.loads[0] / 65536.0f, info.loads[1] / 65536.0f, info.loads[2] / 65536.0f); ADVANCE_BUFFER(buffer, s, written);
 		written += snprintf(s, size - written, "\t\"memory_total\": %u,\n", (unsigned int)(info.totalram / 1024)); ADVANCE_BUFFER(buffer, s, written);
@@ -214,7 +217,10 @@ WEB_API_HANDLER(lights_process_api_request)
 	// Power off the Raspberry Pi.
 	else if (strcmp(command, "poweroff") == 0) {
 
-		system("sudo poweroff");
+		if (system("sudo poweroff") == 0) {
+			api.log_write("Powering off the Raspberry Pi...");
+		}
+
 		return true;
 	}
 
