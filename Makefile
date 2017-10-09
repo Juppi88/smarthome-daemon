@@ -45,7 +45,7 @@ mqtt:
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPacket.c -o obj/MQTTPacket.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTPacketOut.c -o obj/MQTTPacketOut.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTProtocolClient.c -o obj/MQTTProtocolClient.o
-	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTProtocolOut.c -o obj/MQTTProtocolOut.o	
+	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/MQTTProtocolOut.c -o obj/MQTTProtocolOut.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Clients.c -o obj/Clients.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/Heap.c -o obj/Heap.o
 	gcc $(CFLAGS) -c vendor/paho.mqtt.c/src/LinkedList.c -o obj/LinkedList.o
@@ -70,3 +70,16 @@ all:
 	make lights
 	make alarm
 	make link
+
+	@echo
+	################################################################################
+	#
+	# !!! NOTICE !!!
+	#
+	# If you are binding the web API server to a service port (<1024),
+	# remember to call this as a superuser before starting the service:
+	#
+	@echo "# sudo setcap CAP_NET_BIND_SERVICE=+eip "$$(readlink -f .)"/smarthome"
+	#
+	################################################################################
+	@echo
